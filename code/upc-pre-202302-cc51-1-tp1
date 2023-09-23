@@ -1,0 +1,272 @@
+# BORRA TODAS LAS VARIABLES DE MEMORIA
+rm(list=ls(all=TRUE))
+
+# Limpia consola
+cat("\014")
+
+### 1. CARGAR DATOS
+# 1.1 Creamos una variable, le asignamos la ruta del dataset
+path <- "C:/Users/Core i5/Desktop/Fundamentos de Data Science/TRABAJO PARCIAL/hotel_bookings.csv"
+
+# 1.2 Leemos nuestro dataset
+hotel_booking_demand <- read.csv(path, header = TRUE, stringsAsFactors = FALSE, sep = ',')
+
+### 2. INSPECCIONAR DATOS
+# 2.1 Vizualizamos
+# 2.1.1 Las primeras filas
+head(hotel_booking_demand)
+
+# 2.1.2 Las ultimas filas
+tail(hotel_booking_demand)
+
+# 2.1.3 Nombre de las columnas
+names(hotel_booking_demand)
+
+# 2.2 Dimensiones del dataset
+dim(hotel_booking_demand)
+
+# 2.3 Estructura
+str(hotel_booking_demand)
+
+# 2.4 Descripcion general
+summary(hotel_booking_demand)
+
+# 2.5 Identificamos los valores de las columnas
+unique(hotel_booking_demand$hotel)
+unique(hotel_booking_demand$is_canceled)
+unique(hotel_booking_demand$lead_time)
+unique(hotel_booking_demand$arrival_date_year)
+unique(hotel_booking_demand$arrival_date_month)
+unique(hotel_booking_demand$arrival_date_week_number)
+unique(hotel_booking_demand$arrival_date_day_of_month)
+unique(hotel_booking_demand$stays_in_weekend_nights)
+unique(hotel_booking_demand$stays_in_week_nights)
+unique(hotel_booking_demand$adults)
+unique(hotel_booking_demand$children)
+unique(hotel_booking_demand$babies)
+unique(hotel_booking_demand$meal)
+unique(hotel_booking_demand$country)
+unique(hotel_booking_demand$market_segment)
+unique(hotel_booking_demand$distribution_channel)
+unique(hotel_booking_demand$is_repeated_guest)
+unique(hotel_booking_demand$previous_cancellations)
+unique(hotel_booking_demand$previous_bookings_not_canceled)
+unique(hotel_booking_demand$reserved_room_type)
+unique(hotel_booking_demand$assigned_room_type)
+unique(hotel_booking_demand$booking_changes)
+unique(hotel_booking_demand$deposit_type)
+unique(hotel_booking_demand$agent)
+unique(hotel_booking_demand$company)
+unique(hotel_booking_demand$customer_type)
+unique(hotel_booking_demand$adr)
+unique(hotel_booking_demand$required_car_parking_spaces)
+unique(hotel_booking_demand$total_of_special_requests)
+unique(hotel_booking_demand$reservation_status)
+unique(hotel_booking_demand$reservation_status_date)
+
+### 3. PRE-PROCESAR DATOS
+# 3.1 Creamos una copia para no alterar el dataset original
+hotel_booking_data <- hotel_booking_demand
+
+# 3.2 Identificación de datos faltantes (NA)
+# 3.2.1 Datos faltantes en total
+total_missing_data <- sum(is.na(hotel_booking_data))
+cat("Total de datos faltantes:", total_missing_data,"\n")
+
+# 3.2.2 Datos faltantes por columna
+missing_data_per_column <- colSums(is.na(hotel_booking_data))
+print(missing_data_per_column)
+
+# 3.2.3 Fila de los datos faltantes
+unique(hotel_booking_data$children)
+hotel_booking_data[is.na(hotel_booking_data$children), ]
+summary(hotel_booking_data$children)
+
+# 3.3 Completamos los datos faltante
+# 3.3.1 Calculamos la moda y reemplazamos
+children_data <- hotel_booking_data$children
+children_data_table <- table(children_data)
+frequency <- as.numeric(names(children_data_table[children_data_table == max(children_data_table)]))
+cat("La moda en la columna 'children' es:", frequency, "\n")
+barplot(children_data_table, 
+        main = "Distribución de los valores de la columna 'children'",
+        xlab = "Número de niños",
+        ylab = "Frecuencia",
+        col = "blue",
+        border = "black")
+
+hotel_booking_data$children[is.na(hotel_booking_data$children)] <- frequency
+
+# 3.3 Identificación de datos atípicos (Outliers)
+# 3.3.1 Datos atipicos por columna
+boxplot.stats(hotel_booking_data$lead_time)
+length(boxplot.stats(hotel_booking_data$lead_time)$out)
+
+boxplot.stats(hotel_booking_data$stays_in_weekend_nights)
+length(boxplot.stats(hotel_booking_data$stays_in_weekend_nights)$out)
+
+boxplot.stats(hotel_booking_data$stays_in_week_nights)
+length(boxplot.stats(hotel_booking_data$stays_in_week_nights)$out)
+
+boxplot.stats(hotel_booking_data$adults)
+length(boxplot.stats(hotel_booking_data$adults)$out)
+
+boxplot.stats(hotel_booking_data$children)
+length(boxplot.stats(hotel_booking_data$children)$out)
+
+boxplot.stats(hotel_booking_data$babies)
+length(boxplot.stats(hotel_booking_data$babies)$out)
+
+boxplot.stats(hotel_booking_data$is_repeated_guest)
+length(boxplot.stats(hotel_booking_data$is_repeated_guest)$out)
+
+boxplot.stats(hotel_booking_data$previous_cancellations)
+length(boxplot.stats(hotel_booking_data$previous_cancellations)$out)
+
+boxplot.stats(hotel_booking_data$previous_bookings_not_canceled)
+length(boxplot.stats(hotel_booking_data$previous_bookings_not_canceled)$out)
+
+boxplot.stats(hotel_booking_data$booking_changes)
+length(boxplot.stats(hotel_booking_data$booking_changes)$out)
+
+boxplot.stats(hotel_booking_data$days_in_waiting_list)
+length(boxplot.stats(hotel_booking_data$days_in_waiting_list)$out)
+
+boxplot.stats(hotel_booking_data$adr)
+length(boxplot.stats(hotel_booking_data$adr)$out)
+
+boxplot.stats(hotel_booking_data$required_car_parking_spaces)
+length(boxplot.stats(hotel_booking_data$required_car_parking_spaces)$out)
+
+boxplot.stats(hotel_booking_data$total_of_special_requests)
+length(boxplot.stats(hotel_booking_data$total_of_special_requests)$out)
+
+# 3.4 Transformamos los datos atipicos (outliers)
+transformar_outliers <- function(data, columna) {
+  # 3.4.1 Calculamos los cuartiles e IQR
+  Q1 <- quantile(data[[columna]], 0.25)
+  Q3 <- quantile(data[[columna]], 0.75)
+  IQR <- Q3 - Q1
+  
+  # 3.4.2 Calcula los límites superior e inferior
+  limite_superior <- Q3 + 1.5 * IQR
+  limite_inferior <- Q1 - 1.5 * IQR
+
+  data[[columna]][data[[columna]] > limite_superior] <- limite_superior
+  data[[columna]][data[[columna]] < limite_inferior] <- limite_inferior
+  
+  return(data)
+}
+
+hotel_booking_data <- transformar_outliers(hotel_booking_data, 'lead_time')
+hotel_booking_data <- transformar_outliers(hotel_booking_data, 'stays_in_weekend_nights')
+hotel_booking_data <- transformar_outliers(hotel_booking_data, 'stays_in_week_nights')
+hotel_booking_data <- transformar_outliers(hotel_booking_data, 'adults')
+hotel_booking_data$children <- pmin(pmax(hotel_booking_data$children, 0), 10)
+hotel_booking_data$babies <- pmin(pmax(hotel_booking_data$babies, 0), 10)
+hotel_booking_data <- transformar_outliers(hotel_booking_data, 'is_repeated_guest')
+hotel_booking_data <- transformar_outliers(hotel_booking_data, 'previous_cancellations')
+hotel_booking_data <- transformar_outliers(hotel_booking_data, 'previous_bookings_not_canceled')
+hotel_booking_data <- transformar_outliers(hotel_booking_data, 'booking_changes')
+hotel_booking_data <- transformar_outliers(hotel_booking_data, 'days_in_waiting_list')
+hotel_booking_data <- transformar_outliers(hotel_booking_data, 'adr')
+hotel_booking_data$required_car_parking_spaces <- pmin(pmax(hotel_booking_data$required_car_parking_spaces, 0), 8)
+hotel_booking_data <- transformar_outliers(hotel_booking_data, 'total_of_special_requests')
+
+### 4.VISUALIZAR DATOS
+# 4.1 ¿Cuántas reservas se realizan por tipo de hotel? o ¿Qué tipo de hotel prefiere la gente?
+hotel_booking_data$hotel <- as.factor(hotel_booking_data$hotel)
+reservas_por_tipo_hotel <- table(hotel_booking_data$hotel)
+
+reservas_df <- as.data.frame(reservas_por_tipo_hotel)
+names(reservas_df) <- c("Tipo_de_Hotel", "Numero_de_Reservas")
+
+barplot(reservas_df$Numero_de_Reservas, 
+        names.arg = reservas_df$Tipo_de_Hotel,
+        main = "Número de Reservas por Tipo de Hotel",
+        xlab = "Tipo de Hotel",
+        ylab = "Número de Reservas",
+        col = "blue",
+        border = "black",
+        ylim = c(0, max(reservas_df$Numero_de_Reservas) * 1.2))
+
+hotel_preferido <- names(reservas_por_tipo_hotel)[which.max(reservas_por_tipo_hotel)]
+print(reservas_df)
+print(paste("El tipo de hotel preferido es:", hotel_preferido))
+
+# 4.2 ¿Está aumentando la demanda con el tiempo?
+hotel_booking_data$arrival_date_month <- factor(hotel_booking_data$arrival_date_month, 
+                                                levels = c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"))
+
+reservas_por_mes <- table(hotel_booking_data$arrival_date_month)
+
+reservas_mes_df <- as.data.frame(reservas_por_mes)
+names(reservas_mes_df) <- c("Mes", "Numero_de_Reservas")
+
+plot(reservas_mes_df$Numero_de_Reservas, type = "o", col = "blue",
+     xaxt = "n",
+     main = "Demanda de Reservas a lo largo del Tiempo",
+     xlab = "Mes",
+     ylab = "Número de Reservas")
+axis(1, at = 1:12, labels = reservas_mes_df$Mes)
+
+print(reservas_por_mes)
+# 4.3 ¿Cuándo se producen las temporadas de reservas: alta, media y baja?
+reservas_por_mes <- aggregate(is_canceled ~ arrival_date_month, data = hotel_booking_data, FUN = length)
+reservas_por_mes <- reservas_por_mes[order(reservas_por_mes$is_canceled, decreasing = TRUE), ]
+
+
+temporada_alta <- head(reservas_por_mes$arrival_date_month, n = 1)
+temporada_media <- reservas_por_mes$arrival_date_month[ceiling(length(reservas_por_mes$arrival_date_month)/2)]
+temporada_baja <- tail(reservas_por_mes$arrival_date_month, n = 1)
+
+meses <- month.name
+
+temporada_alta_texto <- meses[temporada_alta]
+temporada_media_texto <- meses[temporada_media]
+temporada_baja_texto <- meses[temporada_baja]
+
+cat("Temporada Alta:", temporada_alta_texto, "\n")
+cat("Temporada Media:", temporada_media_texto, "\n")
+cat("Temporada Baja:", temporada_baja_texto, "\n")
+
+# 4.4 ¿Cuándo es menor la demanda de reservas?
+reservas_por_mes <- aggregate(hotel_booking_data$hotel, 
+                              by = list(Mes = hotel_booking_data$arrival_date_month), FUN = length)
+
+mes_menor_demanda <- reservas_por_mes[which.min(reservas_por_mes$x), "Mes"]
+
+print(paste("El mes con menor demanda de reservas es:", mes_menor_demanda))
+
+# 4.5 ¿Cuántas reservas incluyen niños y/o bebes?
+reservas_con_ninos_bebes <- subset(hotel_booking_data, children > 0 | babies > 0)
+cantidad_reservas_con_ninos_bebes <- nrow(reservas_con_ninos_bebes)
+
+print(paste("El número de reservas que incluyen niños y/o bebés es:", cantidad_reservas_con_ninos_bebes))
+
+# 4.6 ¿Es importante contar con espacios de estacionamiento?
+reservas_con_estacionamiento <- subset(hotel_booking_data, required_car_parking_spaces > 0)
+total_reservas <- nrow(hotel_booking_data)
+
+porcentaje_estacionamiento <- (nrow(reservas_con_estacionamiento) / total_reservas) * 100
+
+print(paste("Porcentaje de reservas con estacionamiento:", round(porcentaje_estacionamiento, 1), "%"))
+
+# 4.7 ¿En qué meses del año se producen más cancelaciones de reservas?
+reservas_canceladas <- subset(hotel_booking_data, reservation_status == "Canceled")
+
+cancelaciones_por_mes <- table(reservas_canceladas$arrival_date_month)
+
+cancelaciones_mes_df <- as.data.frame(cancelaciones_por_mes)
+names(cancelaciones_mes_df) <- c("Mes", "Numero_de_Cancelaciones")
+
+barplot(cancelaciones_mes_df$Numero_de_Cancelaciones, 
+        names.arg = cancelaciones_mes_df$Mes,
+        main = "Cancelaciones de Reservas por Mes",
+        xlab = "Mes",
+        ylab = "Número de Cancelaciones",
+        col = "blue",
+        border = "black",
+        ylim = c(0, max(cancelaciones_mes_df$Numero_de_Cancelaciones) * 1.2))
+
+print(cancelaciones_por_mes)
